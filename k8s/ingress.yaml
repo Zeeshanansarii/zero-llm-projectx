@@ -1,0 +1,26 @@
+# Define an Ingress for external access with TLS.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: llm-rag-ingress
+  namespace: llm-rag
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-targets: /
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  IngressClassName: nginx
+  tls:
+  - hosts:
+    - rag-api.wow.com
+    secretName: rag-tls
+  rules:
+  - host: rag-api.wow.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: llm-rag-api
+            port:
+              number: 80

@@ -1,0 +1,76 @@
+# Deploy a standalone Milvus instance with persistent storage.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: milvus-standalone
+  namespace: llm-rag
+  labels:
+    app: milvus-standalone
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: milvus-standalone
+  template:
+    metadata:
+      labels:
+        app: milvus-standalone
+    spec:
+      containers:
+      - name: milvus-standalone
+        image: milvusdb/milvus:latest
+        ports:
+        - containerPort: 19530
+        - containerPort: 9091
+        resources:
+          requests:
+            cpu: "1000m"
+            memory: "2048Mi"
+          limits:
+            cpu: "2000m"
+            memory: "4096Mi"
+        livenessProbe:
+          tcpSocket:
+            port: 19530
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          tcpSocket:
+            port: 19530
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        volumeMounts:
+        - name: milvus-storage
+          mountPath: /milvus/data
+      volumes:
+      - name: milvus-storage
+        persistentVolumeClaim:
+          claimName: milvus-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: milvus-service
+  namespace: llm-rag
+spec:
+  ports:
+  - port: 19530
+    targetPort: 19530
+    protocol: TCP
+  - port: 9091
+    targetPort: 9091
+    protocol: TCP
+  selector:
+    app: milvus-standalone
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: milvus-pvc
+  namespace: llm-rag
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi

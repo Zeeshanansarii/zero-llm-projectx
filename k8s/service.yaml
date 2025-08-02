@@ -1,0 +1,16 @@
+# Expose the RAG application as a ClusterIP service.
+apiVersion: v1
+kind: Service
+metadata:
+  name: llm-rag-api
+  namespace: llm-rag
+  labels:
+    app: llm-rag-api
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 8000
+    protocol: TCP
+  selector:
+    app: llm-rag-api

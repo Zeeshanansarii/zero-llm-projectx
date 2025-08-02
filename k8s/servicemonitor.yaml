@@ -1,0 +1,16 @@
+# Configure Prometheus to scrape metrics from the RAG application.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: llm-rag-api-monitor
+  namespace: llm-rag
+  labels:
+    app: llm-rag-api
+spec:
+  selector:
+    matchLabels:
+      app: llm-rag-api
+  endpoints:
+  - port: http
+    path: /metrics
+    interval: 15s

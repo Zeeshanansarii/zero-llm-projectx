@@ -1,0 +1,88 @@
+# Define a Deployment for the RAG application with auto-scaling and health checks.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: llm-rag-api
+  namespace: llm-rag
+  labels:
+    app: llm-rag-api
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: llm-rag-api
+  template:
+    metadata:
+      labels:
+        app: llm-rag-api
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+    spec:
+      containers:
+      - name: llm-rag-api
+        image: <registry>/llm-rag-api:latest
+        imagePullPolicy: Always
+        ports:
+        - containersPort: 8000
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "512Mi"
+          limits:
+            cpu: "1000m"
+            memory: "1024Mi"
+        livenessProbe:
+          httpsGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 15
+        readinessProbe:
+          httpsGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        env:
+        - name: MILVIS_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: rag-config
+              key: MILVIS_HOST
+        - name: MILVIS_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: rag-config
+              key: MILVIS_PORT
+        - name: Secret_Key
+          valueFrom:
+            secretKeyRef:
+              name: rag-secrets
+              key: secret-key
+---
+apiVersion: auto-scaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: llm-rag-api-hpa
+  namespace: llm-rag
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: llm-rag-api
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+  - type: Resources
+    resources:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resources
+    resources:
+    name: memory
+    target:
+      type: Utilization
+      averageUtilization: 80

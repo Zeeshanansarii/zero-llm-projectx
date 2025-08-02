@@ -1,0 +1,10 @@
+# Create a ConfigMap for environment variables like Milvus host and port.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rag-config
+  namespace: llm-rag
+data:
+  MILVIS_HOST: "milvus-service.llm-rag.svc.cluster.local"
+  MILVIS_PORT: "19530"
+  
